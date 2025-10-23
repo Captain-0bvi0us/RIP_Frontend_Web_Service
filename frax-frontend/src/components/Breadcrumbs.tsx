@@ -1,13 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'react-bootstrap-icons';
+import type { ICrumb } from '../types';
 import './styles/Breadcrumbs.css';
 
-interface ICrumb {
-  label: string;
-  path?: string;
-  active?: boolean;
-}
+
 
 interface BreadcrumbsProps {
   crumbs: ICrumb[];

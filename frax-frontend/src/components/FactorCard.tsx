@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import type { IFactor } from '../types';
 import './styles/FactorCard.css'
 
-export const DefaultImage = 'http://localhost:9000/factors/Images/Default.png'
+export const DefaultImage = 'http://localhost:9000/factors/Images/default.png'
 
 interface FactorCardProps {
     factor: IFactor;

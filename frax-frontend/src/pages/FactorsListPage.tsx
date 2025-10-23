@@ -53,7 +53,7 @@ export const FactorsListPage = () => {
                                 {loading ? 'Поиск...' : 'Искать'}
                             </Button>
                             <div className="cart-wrapper">
-                                <Image src="http://localhost:9000/factors/Images/Корзина.png" alt="Корзина" width={32} />
+                                <Image src="http://localhost:9000/factors/Images/cart.png" alt="Корзина" width={32} />
                                 {cartCount > 0 && (
                                     <Badge pill bg="danger" className="cart-indicator">
                                         {cartCount}

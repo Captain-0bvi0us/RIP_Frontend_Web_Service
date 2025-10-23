@@ -7,7 +7,8 @@ export interface IFactor {
   status?: boolean;
 }
 
-export interface IPaginatedFactors {
-  items: IFactor[];
-  total: number;
+export interface ICrumb {
+  label: string;
+  path?: string;
+  active?: boolean;
 }
