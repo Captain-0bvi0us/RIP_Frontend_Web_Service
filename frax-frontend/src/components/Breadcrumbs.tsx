@@ -1,32 +1,45 @@
-import { Link } from 'react-router-dom';
 import React from 'react';
-// import './Breadcrumbs.css';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'react-bootstrap-icons';
+import './styles/Breadcrumbs.css';
 
 interface ICrumb {
   label: string;
   path?: string;
+  active?: boolean;
 }
 
 interface BreadcrumbsProps {
   crumbs: ICrumb[];
 }
 
-export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs }) => (
-    <nav aria-label="breadcrumb" className="breadcrumbs-nav">
-        <ol className="breadcrumb">
-            <li className="breadcrumb-item"><Link to="/">Главная</Link></li>
-            {crumbs.map((crumb, index) => (
-                <li
-                    key={index}
-                    className={`breadcrumb-item ${index === crumbs.length - 1 ? 'active' : ''}`}
-                >
-                    {index === crumbs.length - 1 || !crumb.path ? (
-                        crumb.label
-                    ) : (
-                        <Link to={crumb.path}>{crumb.label}</Link>
-                    )}
-                </li>
-            ))}
-        </ol>
+export const CustomBreadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs }) => {
+  const allCrumbs = [{ label: 'Главная', path: '/' }, ...crumbs];
+  return (
+    <nav className="modern-breadcrumbs" aria-label="breadcrumb">
+      {allCrumbs.map((crumb, index) => (
+        <React.Fragment key={index}>
+            <div className="breadcrumb-item">
+                {
+                crumb.active || index === allCrumbs.length - 1 ? (
+                    <span className="breadcrumb-active">{crumb.label}</span>
+                ) : (
+                    <Link to={crumb.path || '#'} className="breadcrumb-link">
+                    {crumb.label}
+                    </Link>
+                )
+                }
+            </div>
+
+            {
+                index < allCrumbs.length - 1 && (
+                <div className="breadcrumb-separator">
+                    <ChevronRight size={14} />
+                </div>
+                )
+            }
+        </React.Fragment>
+        ))}
     </nav>
-);
+  );
+};

@@ -3,14 +3,22 @@ import { FACTORS_MOCK } from './mock';
 
 const API_PREFIX = '/api';
 
-// Получение списка факторов с фильтрацией
+// Получение списка факторов с фильтраией по названию
 export const getFactors = async (title: string): Promise<IPaginatedFactors> => {
+    const url = title 
+        ? `${API_PREFIX}/factors?title=${encodeURIComponent(title)}`
+        : `${API_PREFIX}/factors`;
+
     try {
-        const response = await fetch(`${API_PREFIX}/factors?title=${title}`);
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Backend is not available');
         }
-        return await response.json();
+    const data = await response.json();
+    return {
+        items: data.items || [],
+        total: data.total || 0
+    };
     } catch (error) {
         console.warn('Failed to fetch from backend, using mock data.', error);
         const filteredMockItems = FACTORS_MOCK.items.filter(factor =>

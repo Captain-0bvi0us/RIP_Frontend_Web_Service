@@ -1,0 +1,95 @@
+/* Основной контейнер страницы */
+.factor-detail-page {
+    display: flex;
+    align-items: center; 
+    justify-content: center;
+    min-height: 100vh; 
+    padding-top: 56px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Размытый фон с картинкой фактора */
+.factor-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #c1c9d0; 
+    z-index: -1;
+}
+
+/* Карточка с контентом */
+.factor-content-card {
+    background: rgba(255, 255, 255, 0.95); 
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); 
+    padding: 3rem;
+    max-width: 900px;
+    width: 90%;
+    margin-top: 60px; 
+    animation: slideUp 0.6s ease-out; 
+}
+
+/* Заголовок фактора */
+.factor-title {
+    font-weight: 800;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+/* Декоративная линия под заголовком */
+.factor-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background-color: #E60023; 
+    border-radius: 2px;
+}
+
+/* Текст описания */
+.factor-text {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #495057;
+}
+
+/* Изображение фактора внутри карточки */
+.factor-image-wrapper {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.factor-image-wrapper:hover {
+    transform: scale(1.02);
+}
+
+.factor-main-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    pointer-events: none; 
+    user-select: none;
+}  
+
+/* Анимация появления карточки снизу вверх */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
