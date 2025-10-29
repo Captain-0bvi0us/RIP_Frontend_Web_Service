@@ -1,4 +1,4 @@
-import type { IPaginatedFactors, IFactor } from '../types';
+import type { IPaginatedFactors, IFactor, ICartBadge} from '../types';
 import { FACTORS_MOCK } from './mock';
 
 const API_PREFIX = '/api';
@@ -40,5 +40,30 @@ export const getFactorById = async (id: string): Promise<IFactor | null> => {
         console.warn(`Failed to fetch factor ${id}, using mock data.`, error);
         const factor = FACTORS_MOCK.items.find(f => f.id === parseInt(id));
         return factor || null;
+    }
+};
+
+// Получение корзины
+export const getCartBadge = async (): Promise<ICartBadge> => {
+    try {
+        const token = localStorage.getItem('authToken'); 
+        if (!token) {
+            throw new Error('No auth token found');
+        }
+
+        const response = await fetch(`${API_PREFIX}/frax/factorscart`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch cart data');
+        }
+        return await response.json();
+
+    } catch (error) {
+        console.warn('Could not fetch cart data, assuming cart is empty.', error);
+        return { frax_id: null, count: 0 };
     }
 };

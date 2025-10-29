@@ -1,38 +1,43 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Spinner, Form, Badge, Image, Button } from 'react-bootstrap'; // 1. Добавляем Button
 import { FactorCard } from '../components/FactorCard';
-import { getFactors } from '../api/factorsApi';
-import type { IFactor } from '../types';
+import { getFactors, getCartBadge} from '../api/factorsApi';
+import type { IFactor, ICartBadge} from '../types';
 import './styles/FactorsListPage.css'; 
 
 export const FactorsListPage = () => {
     const [factors, setFactors] = useState<IFactor[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [cartCount, setCartCount] = useState(1);
+    const [cartBadge, setCartBadge] = useState<ICartBadge>({ frax_id: null, count: 0 });
 
- const fetchFactors = (filterTitle: string) => {
-    setLoading(true);
-    getFactors(filterTitle)
-        .then(data => {
-            if (Array.isArray(data.items)) {
-                setFactors(data.items);
-            } else {
-                console.error("Получены неверные данные:", data);
-                setFactors([]);
-            }
-        })
-        .finally(() => setLoading(false));
-    };
+    const fetchFactors = (filterTitle: string) => {
+        setLoading(true);
+        getFactors(filterTitle)
+            .then(data => {
+                if (Array.isArray(data.items)) {
+                    setFactors(data.items);
+                } else {
+                    console.error("Получены неверные данные:", data);
+                    setFactors([]);
+                }
+            })
+            .finally(() => setLoading(false));
+        };
 
-    useEffect(() => {
-        fetchFactors('');
-    }, []);
+        useEffect(() => {
+            fetchFactors('');
+            getCartBadge().then(cartData => {
+                setCartBadge(cartData);
+            });
+        }, []);
 
     const handleSearchSubmit = (event: React.FormEvent) => {
         event.preventDefault(); 
         fetchFactors(searchTerm);
     };
+
+    const isCartActive = cartBadge.count > 0 && cartBadge.frax_id !== null;
 
     return (
         <Container fluid className="pt-5 mt-4"> 
@@ -53,13 +58,28 @@ export const FactorsListPage = () => {
                                 {loading ? 'Поиск...' : 'Искать'}
                             </Button>
                             <div className="cart-wrapper">
-                                <Image src="http://localhost:9000/factors/Images/cart.png" alt="Корзина" width={32} />
-                                {cartCount > 0 && (
+                                {isCartActive ? (                               
+                                    <a 
+                                        href="#" 
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            alert(`Переход на страницу заявки (ID: ${cartBadge.frax_id}) будет реализован.`);
+                                        }}
+                                        title="Перейти к заявке"
+                                    >
+                                        <Image src="/mock_images/cart.png" alt="Корзина" width={32} />
+                                    </a>
+                                ) : (                                  
+                                    <div style={{ cursor: 'not-allowed' }}>
+                                        <Image src="/mock_images/cart.png" alt="Корзина" width={32} style={{ opacity: 0.5 }} />
+                                    </div>
+                                )}                               
+                                {isCartActive && (
                                     <Badge pill bg="danger" className="cart-indicator">
-                                        {cartCount}
+                                        {cartBadge.count}
                                     </Badge>
                                 )}
-                            </div>
+                            </div>                          
                         </div>
                     </Col>
                 </Row>

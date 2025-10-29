@@ -9,9 +9,8 @@ export default defineConfig({
     proxy: {
       // Проксируем запросы /api на ваш бэкенд
       '/api': {
-        target: 'http://localhost:8090', // Адрес вашего Go-сервиса
+        target: 'http://localhost:8090', // Адрес нашего Go-сервиса
         changeOrigin: true, // Необходимо для виртуальных хостов
-        // rewrite: (path) => path.replace(/^\/api/, '') // В вашем случае это не нужно, т.к. бэкенд ожидает /api
       },
     },
   },

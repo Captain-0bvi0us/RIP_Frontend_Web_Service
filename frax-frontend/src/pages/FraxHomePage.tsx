@@ -8,7 +8,7 @@ export const HomePage = () => {
 
             <div className="home-page-container">
                 <video autoPlay loop muted playsInline className="home-video-background">
-                    <source src="/Background.mp4" type="video/mp4" />
+                    <source src="/background/Background.mp4" type="video/mp4" />
                     Ваш браузер не поддерживает видео-тег.
                 </video>
 

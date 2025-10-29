@@ -17,3 +17,8 @@ export interface ICrumb {
   path?: string;
   active?: boolean;
 }
+
+export interface ICartBadge {
+    frax_id: number | null;
+    count: number;
+}
