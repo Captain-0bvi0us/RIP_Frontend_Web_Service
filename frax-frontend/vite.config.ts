@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react'
 
 
 export default defineConfig({
+  base: '/RIP_Frontend_Web_Service/',
   plugins: [
     react(),
     mkcert(),

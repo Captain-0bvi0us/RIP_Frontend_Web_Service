@@ -5,7 +5,7 @@ import './styles/FactorCard.css'
 
 
 
-export const DefaultImage = 'http://localhost:9000/factors/Images/default.png'
+export const DefaultImage = '/RIP_Frontend_Web_Service/mock_images/default.png'
 
 export const FactorCard: React.FC<FactorCardProps> = ({ factor }) => {
     return (

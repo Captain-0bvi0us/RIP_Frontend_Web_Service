@@ -72,11 +72,11 @@ export const FactorsListPage = () => {
                                         }}
                                         title="Перейти к заявке"
                                     >
-                                        <Image src="/mock_images/cart.png" alt="Корзина" width={32} />
+                                        <Image src="/RIP_Frontend_Web_Service/mock_images/cart.png" alt="Корзина" width={32} />
                                     </a>
                                 ) : (                                  
                                     <div style={{ cursor: 'not-allowed' }}>
-                                        <Image src="/mock_images/cart.png" alt="Корзина" width={32} style={{ opacity: 0.5 }} />
+                                        <Image src="/RIP_Frontend_Web_Service/mock_images/cart.png" alt="Корзина" width={32} style={{ opacity: 0.5 }} />
                                     </div>
                                 )}                               
                                 {isCartActive && (
