@@ -4,10 +4,11 @@
     align-items: center; 
     justify-content: center;
     min-height: 100vh; 
-    padding-top: 56px;
+    padding-top: 85px;
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
+    margin-bottom: -30px;
 }
 
 /* Размытый фон с картинкой фактора */
@@ -91,5 +92,25 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .factor-content-card {
+        padding: 20px;
+    }
+
+    .factor-title {
+        font-size: 2.5rem; /* Уменьшаем заголовок */
+        text-align: center;
+    }
+
+    .factor-text p {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .factor-content-card .row {
+        text-align: center; /* Центрируем кнопку */
     }
 }

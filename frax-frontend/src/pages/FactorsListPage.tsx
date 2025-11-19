@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Spinner, Form, Badge, Image, Button } from 'react-bootstrap'; // 1. Добавляем Button
+import { Container, Row, Col, Spinner, Form, Badge, Image, Button } from 'react-bootstrap';
 import { FactorCard } from '../components/FactorCard';
 import { getFactors, getCartBadge} from '../api/factorsApi';
+import { useSelector, useDispatch } from 'react-redux';
+import { setSearchTerm } from '../store/slices/filterSlice';
+import type { RootState } from '../store'; 
 import type { IFactor, ICartBadge} from '../types';
 import './styles/FactorsListPage.css'; 
+
+
 
 export const FactorsListPage = () => {
     const [factors, setFactors] = useState<IFactor[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
     const [cartBadge, setCartBadge] = useState<ICartBadge>({ frax_id: null, count: 0 });
+    const dispatch = useDispatch();
+    const searchTerm = useSelector((state: RootState) => state.filter.searchTerm);
+    const isCartActive = cartBadge.count > 0 && cartBadge.frax_id !== null;
 
     const fetchFactors = (filterTitle: string) => {
         setLoading(true);
@@ -26,7 +33,7 @@ export const FactorsListPage = () => {
         };
 
         useEffect(() => {
-            fetchFactors('');
+            fetchFactors(searchTerm);
             getCartBadge().then(cartData => {
                 setCartBadge(cartData);
             });
@@ -36,8 +43,6 @@ export const FactorsListPage = () => {
         event.preventDefault(); 
         fetchFactors(searchTerm);
     };
-
-    const isCartActive = cartBadge.count > 0 && cartBadge.frax_id !== null;
 
     return (
         <Container fluid className="pt-5 mt-4"> 
@@ -52,7 +57,7 @@ export const FactorsListPage = () => {
                                 type="search"
                                 placeholder="Введите название фактора для поиска..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => dispatch(setSearchTerm(e.target.value))}
                             />
                             <Button variant="danger" type="submit" disabled={loading}>
                                 {loading ? 'Поиск...' : 'Искать'}

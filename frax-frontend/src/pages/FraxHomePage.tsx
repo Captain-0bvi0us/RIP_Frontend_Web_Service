@@ -1,6 +1,8 @@
 import { AppNavbar } from '../components/Navbar';
 import './styles/FraxHomePage.css';
 
+
+
 export const HomePage = () => {
     return (
         <div className="homepage-wrapper">

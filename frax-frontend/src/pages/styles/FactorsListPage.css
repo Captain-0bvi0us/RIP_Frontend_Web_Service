@@ -1,7 +1,7 @@
 .factors-header-line {
     border: none; 
     border-top: 2px solid; 
-    width: calc(100% - 80px); 
+    width: calc(100% - 20px); 
     margin: 1rem auto 2rem auto; 
 }
 
@@ -29,4 +29,19 @@
 .all-btn:hover {
     transform: translateY(-5px);
     filter: brightness(1.1);
+}
+
+@media (max-width: 576px) {
+    .search-and-cart-wrapper {
+        flex-direction: column;
+        gap: 10px; /* Добавим отступ между элементами */
+    }
+
+    .search-and-cart-wrapper .form-control {
+        width: 100%;
+    }
+
+    .search-and-cart-wrapper .btn {
+        width: 100%;
+    }
 }

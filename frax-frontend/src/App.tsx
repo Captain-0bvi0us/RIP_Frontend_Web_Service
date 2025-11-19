@@ -4,6 +4,8 @@ import { HomePage } from './pages/FraxHomePage';
 import { FactorsListPage } from './pages/FactorsListPage';
 import { FactorDetailPage } from './pages/FactorDetailPage';
 
+
+
 const MainLayout = () => (
     <>
         <AppNavbar />

@@ -1,5 +1,7 @@
 import type {IPaginatedFactors} from "../types/index.ts";
 
+
+
 export const FACTORS_MOCK: IPaginatedFactors = {
   total: 3,
   items: [

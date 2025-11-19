@@ -1,6 +1,8 @@
 import type { IPaginatedFactors, IFactor, ICartBadge} from '../types';
 import { FACTORS_MOCK } from './mock';
 
+
+
 const API_PREFIX = '/api';
 
 // Получение списка факторов с фильтраией по названию

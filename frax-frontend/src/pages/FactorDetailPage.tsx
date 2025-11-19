@@ -3,10 +3,12 @@ import { useParams } from 'react-router-dom';
 import { Container, Spinner, Row, Col, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { getFactorById } from '../api/factorsApi';
-import type { IFactor } from '../types';
 import { DefaultImage } from '../components/FactorCard';
 import {CustomBreadcrumbs} from '../components/Breadcrumbs'
+import type { IFactor } from '../types';
 import './styles/FactorDetailPage.css';
+
+
 
 export const FactorDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -66,9 +68,6 @@ export const FactorDetailPage = () => {
                         <div className="factor-text">
                             <p>{factor.text}</p>
                         </div>                
-                        <Button className='all-btn mt-4 px-4 py-2' variant="danger" size="lg">
-                            Добавить в расчет
-                        </Button>
                     </Col>
                 </Row>
             </div>

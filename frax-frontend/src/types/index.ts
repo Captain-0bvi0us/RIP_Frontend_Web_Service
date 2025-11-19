@@ -22,3 +22,15 @@ export interface ICartBadge {
     frax_id: number | null;
     count: number;
 }
+
+export interface BreadcrumbsProps {
+  crumbs: ICrumb[];
+}
+
+export interface FactorCardProps {
+    factor: IFactor;
+}
+
+export interface FilterState {
+    searchTerm: string;
+}
