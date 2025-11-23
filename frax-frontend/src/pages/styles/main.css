@@ -1,0 +1,14 @@
+.background-color-profile{
+    width: 100%;
+    min-height: 94vh;
+    background-color: #c1c9d0 !important;
+    margin-bottom: -30px;
+}
+
+.background-color-login{
+    background-color: #c1c9d0 !important;
+}
+
+.background-color-register{
+    background-color: #c1c9d0 !important;
+}

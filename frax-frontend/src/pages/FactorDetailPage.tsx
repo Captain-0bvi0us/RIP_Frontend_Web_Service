@@ -1,30 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { Container, Spinner, Row, Col, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
-import { getFactorById } from '../api/factorsApi';
 import { DefaultImage } from '../components/FactorCard';
-import {CustomBreadcrumbs} from '../components/Breadcrumbs'
-import type { IFactor } from '../types';
+import { CustomBreadcrumbs } from '../components/Breadcrumbs';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchFactorById, clearCurrentFactor } from '../store/slices/factorsSlice';
+import type { RootState, AppDispatch } from '../store';
 import './styles/FactorDetailPage.css';
 
 
 
 export const FactorDetailPage = () => {
     const { id } = useParams<{ id: string }>();
-    const [factor, setFactor] = useState<IFactor | null>(null);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch<AppDispatch>();
+    const { currentFactor: factor, loading } = useSelector((state: RootState) => state.factors);
+    const displayImage = factor?.image || DefaultImage;
 
     useEffect(() => {
         if (id) {
-            setLoading(true);
-            getFactorById(id)
-                .then(data => setFactor(data))
-                .finally(() => setLoading(false));
+            dispatch(fetchFactorById(id));
         }
-    }, [id]);
-
-    const displayImage = factor?.image || DefaultImage;
+        return () => {
+            dispatch(clearCurrentFactor());
+        };
+    }, [id, dispatch]);
 
     if (loading) {
         return (

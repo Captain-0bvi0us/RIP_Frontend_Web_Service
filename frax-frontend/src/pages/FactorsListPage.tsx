@@ -1,47 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Container, Row, Col, Spinner, Form, Badge, Image, Button } from 'react-bootstrap';
 import { FactorCard } from '../components/FactorCard';
-import { getFactors, getCartBadge} from '../api/factorsApi';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom'; 
+import { fetchFactors } from '../store/slices/factorsSlice';
+import { fetchCartBadge } from '../store/slices/cartSlice';
 import { setSearchTerm } from '../store/slices/filterSlice';
-import type { RootState } from '../store'; 
-import type { IFactor, ICartBadge} from '../types';
-import './styles/FactorsListPage.css'; 
+import type { RootState, AppDispatch } from '../store';
+import './styles/FactorsListPage.css';
 
 
 
 export const FactorsListPage = () => {
-    const [factors, setFactors] = useState<IFactor[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [cartBadge, setCartBadge] = useState<ICartBadge>({ frax_id: null, count: 0 });
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
+    const { items: factors, loading } = useSelector((state: RootState) => state.factors);
     const searchTerm = useSelector((state: RootState) => state.filter.searchTerm);
-    const isCartActive = cartBadge.count > 0 && cartBadge.frax_id !== null;
+    const cartState = useSelector((state: RootState) => state.cart);
+    const isCartActive = cartState.count > 0 && cartState.frax_id !== null;
 
-    const fetchFactors = (filterTitle: string) => {
-        setLoading(true);
-        getFactors(filterTitle)
-            .then(data => {
-                if (Array.isArray(data.items)) {
-                    setFactors(data.items);
-                } else {
-                    console.error("Получены неверные данные:", data);
-                    setFactors([]);
-                }
-            })
-            .finally(() => setLoading(false));
-        };
-
-        useEffect(() => {
-            fetchFactors(searchTerm);
-            getCartBadge().then(cartData => {
-                setCartBadge(cartData);
-            });
-        }, []);
+    useEffect(() => {
+        dispatch(fetchFactors(searchTerm));
+        dispatch(fetchCartBadge());
+    }, [dispatch]);
 
     const handleSearchSubmit = (event: React.FormEvent) => {
         event.preventDefault(); 
-        fetchFactors(searchTerm);
+        dispatch(fetchFactors(searchTerm));
+    };
+
+    const handleCartClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (cartState.frax_id) {
+            navigate(`/orders/${cartState.frax_id}`);
+        }
     };
 
     return (
@@ -62,14 +54,12 @@ export const FactorsListPage = () => {
                             <Button variant="danger" type="submit" disabled={loading}>
                                 {loading ? 'Поиск...' : 'Искать'}
                             </Button>
+                            
                             <div className="cart-wrapper">
                                 {isCartActive ? (                               
                                     <a 
                                         href="#" 
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            alert(`Переход на страницу заявки (ID: ${cartBadge.frax_id}) будет реализован.`);
-                                        }}
+                                        onClick={handleCartClick}
                                         title="Перейти к заявке"
                                     >
                                         <Image src="/mock_images/cart.png" alt="Корзина" width={32} />
@@ -81,7 +71,7 @@ export const FactorsListPage = () => {
                                 )}                               
                                 {isCartActive && (
                                     <Badge pill bg="danger" className="cart-indicator">
-                                        {cartBadge.count}
+                                        {cartState.count}
                                     </Badge>
                                 )}
                             </div>                          
