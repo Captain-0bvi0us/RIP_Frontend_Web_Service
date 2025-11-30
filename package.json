@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.0",
+    "axios": "^1.13.2",
+    "bootstrap": "^5.3.8",
+    "react-bootstrap": "^2.10.10",
+    "react-bootstrap-icons": "^1.11.6",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.9.6"
+  },
+  "devDependencies": {
+    "swagger-typescript-api": "^13.2.16",
+    "vite-plugin-mkcert": "^1.17.9",
+    "vite-plugin-pwa": "^1.1.0"
+  }
+}
