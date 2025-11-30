@@ -17,13 +17,10 @@ interface UserState {
     error: string | null;      
 }
 
-const storedToken = localStorage.getItem('authToken');
-const storedUser = localStorage.getItem('userInfo');
-
 const initialState: UserState = {
-    user: storedUser ? JSON.parse(storedUser) : null,
-    token: storedToken || null,
-    isAuthenticated: !!storedToken,
+    user: null, 
+    token: null,
+    isAuthenticated: false,
     registerSuccess: false,
     loading: false,
     error: null,

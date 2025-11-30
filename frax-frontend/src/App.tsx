@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AppNavbar } from './components/Navbar';
 import { HomePage } from './pages/FraxHomePage';
 import { FactorsListPage } from './pages/FactorsListPage';
@@ -21,6 +22,12 @@ const MainLayout = () => (
 );
 
 function App() {
+
+    useEffect(() => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userInfo');
+    }, []);
+
     return (
         <BrowserRouter>
       <Routes>

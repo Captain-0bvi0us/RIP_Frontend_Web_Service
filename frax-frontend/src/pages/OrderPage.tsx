@@ -12,7 +12,7 @@ import {
     resetOperationSuccess,
     clearCurrentOrder
 } from '../store/slices/fraxSlice';
-import { Trash, CheckCircleFill, ExclamationCircle } from 'react-bootstrap-icons';
+import { Trash, CheckCircleFill, ExclamationCircle, Floppy } from 'react-bootstrap-icons'; // Добавил Floppy
 import type { AppDispatch, RootState } from '../store';
 
 
@@ -37,7 +37,7 @@ export const OrderPage = () => {
         return () => { dispatch(clearCurrentOrder()); dispatch(resetOperationSuccess()); }
     }, [id, dispatch]);
 
-    useEffect(() => {
+        useEffect(() => {
         if (currentOrder) {
             setFormData({
                 age: currentOrder.age || 0,
@@ -51,7 +51,7 @@ export const OrderPage = () => {
             });
             setDescriptions(descMap);
         }
-    }, [currentOrder]);
+    }, [currentOrder?.id]);
 
     if (operationSuccess) {
         return (
@@ -90,18 +90,21 @@ export const OrderPage = () => {
                 data: { ...formData, gender: formData.gender } 
             }))
             .unwrap()
-            .then(() => alert("Данные успешно сохранены в БД!"))
+            .then(() => alert("Основные данные сохранены!"))
             .catch(() => alert("Ошибка при сохранении"));
         }
     };
 
-    const handleDescBlur = (factorId: number) => {
+    const handleSaveOneDescription = (factorId: number) => {
         if(currentOrder.id && descriptions[factorId] !== undefined) {
             dispatch(updateFactorDescription({
                 orderId: currentOrder.id,
                 factorId,
                 desc: descriptions[factorId]
-            }));
+            }))
+            .unwrap()
+            .then(() => alert("Примечание сохранено"))
+            .catch(() => alert("Ошибка сохранения примечания"));
         }
     };
 
@@ -114,58 +117,36 @@ export const OrderPage = () => {
             </Card>
 
             <Row className="mb-4 g-4">
+                {/* Левая колонка: Ввод данных */}
                 <Col md={6}>
                     <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#f8f9fa' }}>
                         <Card.Body>
                             <h5 className="fw-bold mb-3">Введите данные в анкету</h5>
                             <Form>
+                                {/* Поля формы */}
                                 <Form.Group as={Row} className="mb-2 align-items-center">
                                     <Form.Label column sm={4}>Возраст</Form.Label>
                                     <Col sm={8}>
-                                        <Form.Control 
-                                            type="number" name="age" 
-                                            value={formData.age} onChange={handleInputChange} 
-                                            disabled={!isDraft}
-                                        />
+                                        <Form.Control type="number" name="age" value={formData.age} onChange={handleInputChange} disabled={!isDraft} />
                                     </Col>
                                 </Form.Group>
                                 <Form.Group as={Row} className="mb-2 align-items-center">
                                     <Form.Label column sm={4}>Пол</Form.Label>
                                     <Col sm={8}>
-                                        <Form.Check 
-                                            inline type="radio" label="Мужской" 
-                                            name="gender" id="gender-male"
-                                            checked={!formData.gender} 
-                                            onChange={() => setFormData(p => ({...p, gender: false}))}
-                                            disabled={!isDraft}
-                                        />
-                                        <Form.Check 
-                                            inline type="radio" label="Женский" 
-                                            name="gender" id="gender-female"
-                                            checked={formData.gender} 
-                                            onChange={() => setFormData(p => ({...p, gender: true}))}
-                                            disabled={!isDraft}
-                                        />
+                                        <Form.Check inline type="radio" label="Мужской" name="gender" id="gender-male" checked={!formData.gender} onChange={() => setFormData(p => ({...p, gender: false}))} disabled={!isDraft} />
+                                        <Form.Check inline type="radio" label="Женский" name="gender" id="gender-female" checked={formData.gender} onChange={() => setFormData(p => ({...p, gender: true}))} disabled={!isDraft} />
                                     </Col>
                                 </Form.Group>
                                 <Form.Group as={Row} className="mb-2 align-items-center">
                                     <Form.Label column sm={4}>Вес (кг)</Form.Label>
                                     <Col sm={8}>
-                                        <Form.Control 
-                                            type="number" name="weight" 
-                                            value={formData.weight} onChange={handleInputChange} 
-                                            disabled={!isDraft}
-                                        />
+                                        <Form.Control type="number" name="weight" value={formData.weight} onChange={handleInputChange} disabled={!isDraft} />
                                     </Col>
                                 </Form.Group>
                                 <Form.Group as={Row} className="mb-2 align-items-center">
                                     <Form.Label column sm={4}>Рост (см)</Form.Label>
                                     <Col sm={8}>
-                                        <Form.Control 
-                                            type="number" name="height" 
-                                            value={formData.height} onChange={handleInputChange} 
-                                            disabled={!isDraft}
-                                        />
+                                        <Form.Control type="number" name="height" value={formData.height} onChange={handleInputChange} disabled={!isDraft} />
                                     </Col>
                                 </Form.Group>
                             </Form>
@@ -178,8 +159,6 @@ export const OrderPage = () => {
                     <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#f8f9fa' }}>
                         <Card.Body>
                             <h5 className="fw-bold mb-3">Результат</h5>
-                            
-                            {/* Если ЗАВЕРШЕНА (4) */}
                             {isCompleted && (
                                 <div>
                                     <div className="mb-3">
@@ -192,21 +171,13 @@ export const OrderPage = () => {
                                     </div>
                                 </div>
                             )}
-
                             {isRejected && (
                                 <div className="text-center py-4">
                                     <ExclamationCircle size={48} className="text-danger mb-3" />
                                     <h5 className="text-danger fw-bold">Заявка отклонена</h5>
-                                    <p className="text-muted">
-                                        К сожалению, модератор отклонил вашу заявку. 
-                                        <br />
-                                        Возможно, данные были заполнены некорректно или нарушают правила сервиса.
-                                        <br />
-                                        Пожалуйста, создайте новую заявку или свяжитесь с поддержкой.
-                                    </p>
+                                    <p className="text-muted">Модератор отклонил заявку. Проверьте корректность данных.</p>
                                 </div>
                             )}
-
                             {!isCompleted && !isRejected && (
                                 <div className="text-muted d-flex align-items-center h-75">
                                     <i>Результат будет доступен после обработки заявки модератором.</i>
@@ -217,6 +188,7 @@ export const OrderPage = () => {
                 </Col>
             </Row>
 
+            {/* Список факторов */}
             <div className="d-flex flex-column gap-3 mb-5">
                 {currentOrder.factors?.map((f) => (
                     <Card key={f.factor_id} className="border-0 shadow-sm">
@@ -235,6 +207,7 @@ export const OrderPage = () => {
                                     {isDraft && (
                                         <Button 
                                             variant="link" className="text-muted p-0 ms-2"
+                                            title="Удалить из заявки"
                                             onClick={() => dispatch(removeFactorFromOrder({ orderId: currentOrder.id!, factorId: f.factor_id! }))}
                                         >
                                             <Trash size={20} />
@@ -242,18 +215,31 @@ export const OrderPage = () => {
                                     )}
                                 </Col>
 
-                                <Col md={8} className="p-3 bg-light">
+                                <Col md={8} className="p-3 bg-light d-flex flex-column">
                                     <Form.Control
                                         as="textarea"
-                                        rows={3}
-                                        placeholder="Дополнительная информация..."
+                                        rows={2}
+                                        placeholder="Дополнительная информация (например: стаж курения)..."
                                         value={descriptions[f.factor_id!] || ''}
                                         onChange={(e) => setDescriptions(prev => ({ ...prev, [f.factor_id!]: e.target.value }))}
-                                        onBlur={() => handleDescBlur(f.factor_id!)}
                                         disabled={!isDraft}
-                                        className="border-0 bg-white"
+                                        className="border-0 bg-white mb-2"
                                         style={{ resize: 'none' }}
                                     />
+                                    
+                                    {/* Кнопка сохранения примечания */}
+                                    {isDraft && (
+                                        <div className="text-end">
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline-success" 
+                                                onClick={() => handleSaveOneDescription(f.factor_id!)}
+                                                className="d-inline-flex align-items-center gap-2"
+                                            >
+                                                <Floppy size={14}/> Сохранить
+                                            </Button>
+                                        </div>
+                                    )}
                                 </Col>
                             </Row>
                         </Card.Body>
@@ -261,16 +247,20 @@ export const OrderPage = () => {
                 ))}
             </div>
 
+            {/* Кнопки управления */}
             {isDraft && (
                 <Row>
                     <Col className="d-flex gap-2">
-                        <Button variant="outline-success" onClick={handleSaveMain}>Сохранить изменения</Button>
+                        <Button variant="outline-success" onClick={handleSaveMain}>
+                            <Floppy className="me-2"/>
+                            Сохранить анкету
+                        </Button>
                         <Button variant="outline-danger" onClick={() => {
                             if(window.confirm('Удалить заявку?')) dispatch(deleteOrder(currentOrder.id!));
                         }}>Удалить заявку</Button>
                     </Col>
                     <Col className="text-end">
-                         <Button variant="outline-success" size="lg" onClick={() => dispatch(submitOrder(currentOrder.id!))}>
+                         <Button variant="success" size="lg" onClick={() => dispatch(submitOrder(currentOrder.id!))}>
                             Сформировать <CheckCircleFill className="ms-2"/>
                         </Button>
                     </Col>
