@@ -3,8 +3,6 @@ import { api } from '../../api';
 import { logoutUser } from './userSlice'; 
 import type { DsFraxDTO, DsFraxUpdateRequest, DsFactorToFraxUpdateRequest } from '../../api/Api';
 
-
-
 interface FraxState {
     list: DsFraxDTO[];           
     currentOrder: DsFraxDTO | null; 
@@ -45,12 +43,14 @@ export const fetchOrderById = createAsyncThunk(
         try {
             const response = await api.frax.fraxDetail(parseInt(id));
             const data: any = response.data;
+            // Маппинг факторов (приводим ключи к единому виду)
             const mappedFactors = (data.Factors || data.factors || []).map((f: any) => ({
                 factor_id: f.FactorID ?? f.factor_id ?? 0,
                 title: f.Title ?? f.title ?? 'Без названия',
                 image: f.Image ?? f.image ?? '',
                 description: f.Description ?? f.description ?? ''
             }));
+            
             const mappedOrder: DsFraxDTO = {
                 id: data.ID ?? data.id,
                 status: data.Status ?? data.status ?? 1, 
@@ -60,10 +60,10 @@ export const fetchOrderById = createAsyncThunk(
                 height: data.Height ?? data.height ?? 0,
                 POF: data.POF ?? data.pof ?? 0,
                 PHF: data.PHF ?? data.phf ?? 0,
+                creator_login: data.CreatorID ?? data.creator_login, // Важно для фильтрации модератора
                 factors: mappedFactors
             };
             
-            console.log('Загруженная заявка (после маппинга):', mappedOrder); 
             return mappedOrder;
         } catch (err: any) {
             return rejectWithValue('Заявка не найдена');
@@ -144,6 +144,19 @@ export const deleteOrder = createAsyncThunk(
     }
 );
 
+// --- 8. НОВОЕ: Резолв заявки (Принять/Отклонить) ---
+export const resolveOrder = createAsyncThunk(
+    'frax/resolve',
+    async ({ id, action }: { id: number; action: 'complete' | 'reject' }, { rejectWithValue }) => {
+        try {
+            await api.frax.resolveUpdate(id, { action });
+            return { id, action };
+        } catch (err: any) {
+            return rejectWithValue('Не удалось обновить статус заявки');
+        }
+    }
+);
+
 const fraxSlice = createSlice({
     name: 'frax',
     initialState,
@@ -157,41 +170,62 @@ const fraxSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Список
-            .addCase(fetchOrdersList.pending, (state) => { state.loading = true; })
+            // --- Список заявок ---
+            .addCase(fetchOrdersList.pending, (state) => { 
+                // Важно: включаем лоадер только если список пуст.
+                // Это позволяет Short Polling работать в фоне без мерцания интерфейса.
+                if (state.list.length === 0) {
+                    state.loading = true; 
+                }
+            })
             .addCase(fetchOrdersList.fulfilled, (state, action) => {
                 state.loading = false;
                 state.list = action.payload || []; 
-})
-            // Детали
-            .addCase(fetchOrderById.pending, (state) => { state.loading = true; state.currentOrder = null; })
+            })
+            
+            // --- Детальная страница ---
+            .addCase(fetchOrderById.pending, (state) => { 
+                state.loading = true; 
+                state.currentOrder = null; 
+            })
             .addCase(fetchOrderById.fulfilled, (state, action) => {
                 state.loading = false;
                 state.currentOrder = action.payload;
             })
-            // Обновление полей (локально обновляем стейт)
+
+            // --- Локальные обновления стейта (без перезагрузки всей заявки) ---
             .addCase(updateOrderFields.fulfilled, (state, action) => {
                 if (state.currentOrder) {
                     state.currentOrder = { ...state.currentOrder, ...action.payload };
                 }
             })
-            // Обновление описания фактора
             .addCase(updateFactorDescription.fulfilled, (state, action) => {
                 if (state.currentOrder && state.currentOrder.factors) {
                     const factor = state.currentOrder.factors.find(f => f.factor_id === action.payload.factorId);
                     if (factor) factor.description = action.payload.desc;
                 }
             })
-            // Удаление фактора
             .addCase(removeFactorFromOrder.fulfilled, (state, action) => {
                 if (state.currentOrder && state.currentOrder.factors) {
                     state.currentOrder.factors = state.currentOrder.factors.filter(f => f.factor_id !== action.payload);
                 }
             })
-            // Сформировать / Удалить (успех)
+
+            // --- Действия, вызывающие успех операции (редирект или алерт) ---
             .addCase(submitOrder.fulfilled, (state) => { state.operationSuccess = true; })
             .addCase(deleteOrder.fulfilled, (state) => { state.operationSuccess = true; })
-            // Сброс
+            
+            // --- Обработка решения модератора ---
+            .addCase(resolveOrder.fulfilled, (state, action) => {
+                state.operationSuccess = true;
+                // Оптимистичное обновление статуса в текущем просмотре
+                if (state.currentOrder && state.currentOrder.id === action.payload.id) {
+                    // 4 = Completed, 5 = Rejected
+                    state.currentOrder.status = action.payload.action === 'complete' ? 4 : 5;
+                }
+            })
+
+            // --- Сброс при выходе ---
             .addCase(logoutUser.fulfilled, () => initialState);
     }
 });

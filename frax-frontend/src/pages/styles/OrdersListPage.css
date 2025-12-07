@@ -1,0 +1,18 @@
+.table-warning-soft {
+    background-color: #fff3cd !important;
+}
+
+.blink-icon {
+    animation: blinker 1.5s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.user-filter-list {
+    max-height: 70vh;
+    overflow-y: auto;
+}
