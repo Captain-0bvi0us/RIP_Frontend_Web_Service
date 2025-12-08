@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchOrdersList } from '../store/slices/fraxSlice';
 import { ExclamationCircleFill, Funnel, PersonFill } from 'react-bootstrap-icons';
 import type { AppDispatch, RootState } from '../store';
-import './styles/OrdersListPage.css'; // Создай этот файл для стилей (код ниже)
+import './styles/OrdersListPage.css';
 
 const STATUS_FORMED = 3;
 
@@ -26,39 +26,28 @@ export const OrdersListPage = () => {
     const { list, loading } = useSelector((state: RootState) => state.frax);
     const { user } = useSelector((state: RootState) => state.user);
 
-    // Фильтры для API (Бэкенд)
     const [apiFilters, setApiFilters] = useState({
         status: 'all',
         from: '',
         to: ''
     });
 
-    // Фильтр по пользователю (Фронтенд, только для модератора)
     const [selectedCreatorId, setSelectedCreatorId] = useState<number | 'all'>('all');
 
     // --- SHORT POLLING ---
     useEffect(() => {
         const loadData = () => dispatch(fetchOrdersList(apiFilters));
-        
-        loadData(); // Первый запуск
-
-        // Запускаем интервал каждые 5 секунд
+        loadData(); 
         const intervalId = setInterval(loadData, 5000);
-
-        // Очистка при размонтировании
         return () => clearInterval(intervalId);
-    }, [dispatch, apiFilters]); // Перезапуск при смене API фильтров
+    }, [dispatch, apiFilters]);
 
-    // --- ЛОГИКА МОДЕРАТОРА: Список пользователей ---
-    // Вычисляем список уникальных пользователей из загруженных заявок
     const creatorsStats = useMemo(() => {
         if (!list) return [];
         const stats = new Map<number, { countFormed: number, total: number, name: string }>();
 
         list.forEach(order => {
-            const creatorId = order.creator_login || 0; // В DTO поле называется creator_login, но там ID
-            // Так как бэкенд не возвращает имя в списке (пока), используем ID или заглушку
-            // Если бы бэкенд возвращал имя, мы бы брали его оттуда.
+            const creatorId = order.creator_login || 0; 
             const creatorName = `Пользователь #${creatorId}`; 
 
             if (!stats.has(creatorId)) {
@@ -75,12 +64,10 @@ export const OrdersListPage = () => {
         return Array.from(stats.entries()).map(([id, data]) => ({ id, ...data }));
     }, [list]);
 
-    // --- ФИЛЬТРАЦИЯ СПИСКА (Frontend) ---
     const displayedList = useMemo(() => {
         if (!list) return [];
-        if (!user?.moderator) return list; // Обычный юзер видит то, что прислал бэкенд (свои)
+        if (!user?.moderator) return list;
         
-        // Модератор: фильтр по выбранному юзеру
         if (selectedCreatorId === 'all') return list;
         return list.filter(order => order.creator_login === selectedCreatorId);
     }, [list, user?.moderator, selectedCreatorId]);
