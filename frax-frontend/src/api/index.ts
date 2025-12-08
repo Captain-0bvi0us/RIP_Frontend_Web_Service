@@ -2,8 +2,10 @@ import { Api } from './Api';
 
 
 
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
 export const api = new Api({
-    baseURL: '/api',
+    baseURL: baseURL,
 });
 
 api.instance.interceptors.request.use((config) => {

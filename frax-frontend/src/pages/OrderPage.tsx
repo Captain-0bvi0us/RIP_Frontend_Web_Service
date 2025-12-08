@@ -28,11 +28,9 @@ export const OrderPage = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { currentOrder, loading, operationSuccess } = useSelector((state: RootState) => state.frax);
     const { user } = useSelector((state: RootState) => state.user);
-
     const [formData, setFormData] = useState({ age: 0, gender: false, weight: 0, height: 0 });
     const [descriptions, setDescriptions] = useState<{[key: number]: string}>({});
 
-    // 1. Загрузка данных при входе на страницу
     useEffect(() => {
         if (id) {
             dispatch(fetchOrderById(id));
@@ -43,7 +41,6 @@ export const OrderPage = () => {
         };
     }, [id, dispatch]);
 
-    // 2. Заполнение формы при получении данных заказа
     useEffect(() => {
         if (currentOrder) {
             setFormData({
@@ -61,7 +58,6 @@ export const OrderPage = () => {
         }
     }, [currentOrder?.id, currentOrder?.age, currentOrder?.gender, currentOrder?.weight, currentOrder?.height, currentOrder?.factors]);
 
-    // Экран успеха после операции (Сформировать / Удалить / Принять / Отклонить)
     if (operationSuccess) {
         return (
             <Container className="mt-5 pt-5 text-center">
@@ -89,7 +85,6 @@ export const OrderPage = () => {
 
     const isModerator = user?.moderator;
 
-    // --- Обработчики ввода данных ---
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.type === 'checkbox' || e.target.type === 'radio' 
             ? (e.target.id === 'gender-female') 
@@ -123,7 +118,6 @@ export const OrderPage = () => {
         }
     };
 
-    // --- Обработчики Модератора ---
     const handleApprove = () => {
         if (currentOrder.id && window.confirm("Принять заявку? Результаты будут сохранены.")) {
             dispatch(resolveOrder({ id: currentOrder.id, action: 'complete' }));
