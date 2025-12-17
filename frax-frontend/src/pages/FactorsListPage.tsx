@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Container, Row, Col, Spinner, Form, Badge, Image, Button } from 'react-bootstrap';
+import { GearFill } from 'react-bootstrap-icons'; 
 import { FactorCard } from '../components/FactorCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom'; 
@@ -18,6 +19,7 @@ export const FactorsListPage = () => {
     const searchTerm = useSelector((state: RootState) => state.filter.searchTerm);
     const cartState = useSelector((state: RootState) => state.cart);
     const isCartActive = cartState.count > 0 && cartState.frax_id !== null;
+    const { user } = useSelector((state: RootState) => state.user);
 
     useEffect(() => {
         dispatch(fetchFactors(searchTerm));
@@ -54,7 +56,16 @@ export const FactorsListPage = () => {
                             <Button variant="danger" type="submit" disabled={loading}>
                                 {loading ? 'Поиск...' : 'Искать'}
                             </Button>
-                            
+                            {user?.moderator && (
+                                <Button 
+                                    variant="danger" 
+                                    className="ms-2 d-flex align-items-center gap-2"
+                                    onClick={() => navigate('/factors/manage')}
+                                    title="Управление услугами"
+                                >
+                                    <GearFill /> <span className="d-none d-md-inline">Управление</span>
+                                </Button>
+                            )}                            
                             <div className="cart-wrapper">
                                 {isCartActive ? (                               
                                     <a 

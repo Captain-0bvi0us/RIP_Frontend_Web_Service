@@ -7,16 +7,14 @@ import { updateUserProfile, logoutUser } from '../store/slices/userSlice';
 import type { RootState, AppDispatch } from '../store';
 import './styles/main.css';
 
+
+
 export const ProfilePage = () => {
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
-    const { user, token } = useSelector((state: RootState) => state.user);
+    const { user } = useSelector((state: RootState) => state.user);
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState({ full_name: '', username: '', password: '' });
-
-    useEffect(() => {
-        if (!token) navigate('/login');
-    }, [token, navigate]);
 
     useEffect(() => {
         if (user) {

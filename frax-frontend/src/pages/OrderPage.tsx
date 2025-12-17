@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Image, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Image, Spinner, Badge } from 'react-bootstrap';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -13,8 +13,10 @@ import {
     resetOperationSuccess,
     clearCurrentOrder
 } from '../store/slices/fraxSlice';
-import { Trash, CheckCircleFill, ExclamationCircle, Floppy, XCircleFill, CheckLg } from 'react-bootstrap-icons'; 
+import { Trash, CheckCircleFill, Floppy, XCircleFill, HourglassSplit } from 'react-bootstrap-icons'; 
 import type { AppDispatch, RootState } from '../store';
+
+
 
 export const DefaultImage = '/mock_images/default.png';
 
@@ -27,28 +29,38 @@ export const OrderPage = () => {
     const { id } = useParams<{ id: string }>();
     const dispatch = useDispatch<AppDispatch>();
     const { currentOrder, loading, operationSuccess } = useSelector((state: RootState) => state.frax);
-    const { user } = useSelector((state: RootState) => state.user);
+    const { user } = useSelector((state: RootState) => state.user);  
     const [formData, setFormData] = useState({ age: 0, gender: false, weight: 0, height: 0 });
     const [descriptions, setDescriptions] = useState<{[key: number]: string}>({});
+    const isDraft = currentOrder?.status === STATUS_DRAFT;
 
     useEffect(() => {
         if (id) {
             dispatch(fetchOrderById(id));
         }
-        return () => { 
-            dispatch(clearCurrentOrder()); 
-            dispatch(resetOperationSuccess()); 
+        return () => {
+            dispatch(clearCurrentOrder());
+            dispatch(resetOperationSuccess());
         };
     }, [id, dispatch]);
 
     useEffect(() => {
+        if (!id || isDraft) return
+        console.log("Starting polling...");
+        const intervalId = setInterval(() => {
+            dispatch(fetchOrderById(id));
+        }, 15000);
+        return () => clearInterval(intervalId);
+    }, [id, dispatch, isDraft]); 
+
+    useEffect(() => {
         if (currentOrder) {
-            setFormData({
-                age: currentOrder.age || 0,
-                gender: currentOrder.gender || false,
-                weight: currentOrder.weight || 0,
-                height: currentOrder.height || 0
-            });
+            setFormData(prev => ({
+                age: currentOrder.age ?? prev.age,
+                gender: currentOrder.gender ?? prev.gender,
+                weight: currentOrder.weight ?? prev.weight,
+                height: currentOrder.height ?? prev.height
+            }));
             
             const descMap: {[key: number]: string} = {};
             currentOrder.factors?.forEach(f => {
@@ -56,40 +68,45 @@ export const OrderPage = () => {
             });
             setDescriptions(descMap);
         }
-    }, [currentOrder?.id, currentOrder?.age, currentOrder?.gender, currentOrder?.weight, currentOrder?.height, currentOrder?.factors]);
+    }, [currentOrder?.id, currentOrder?.factors]);
 
     if (operationSuccess) {
         return (
             <Container className="mt-5 pt-5 text-center">
                 <Card className="p-5 shadow-sm border-0">
-                    <h2 className="text-dark mb-3">Действие выполнено успешно!</h2>
-                    <p className="text-muted">Статус заявки был обновлен.</p>
+                    <h2 className="text-dark mb-3">Действие выполнено!</h2>
+                    <p className="text-muted">Статус заявки обновлен.</p>
                     <div className="d-flex justify-content-center gap-3">
-                        <Link to="/orders"><Button variant="danger">К списку заявок</Button></Link>
+                        <Link to="/orders"><Button variant="danger">К списку</Button></Link>
+                        <Button variant="outline-secondary" onClick={() => dispatch(resetOperationSuccess())}>
+                            Остаться
+                        </Button>
                     </div>
                 </Card>
             </Container>
         );
     }
 
-    if (loading || !currentOrder) return (
-        <Container className="pt-5 mt-5 text-center">
-            <Spinner animation="border" variant="danger" />
-        </Container>
-    );
+    if (loading && !currentOrder) {
+        return (
+            <Container className="pt-5 mt-5 text-center">
+                <Spinner animation="border" variant="danger" />
+            </Container>
+        );
+    }
 
-    const isDraft = currentOrder.status === STATUS_DRAFT;
+    if (!currentOrder) return null;
+
     const isFormed = currentOrder.status === STATUS_FORMED;
     const isCompleted = currentOrder.status === STATUS_COMPLETED;
     const isRejected = currentOrder.status === STATUS_REJECTED;
-
     const isModerator = user?.moderator;
+    const isWaitingForAsyncResult = isCompleted && (currentOrder.POF === 0 || currentOrder.POF === undefined);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.type === 'checkbox' || e.target.type === 'radio' 
             ? (e.target.id === 'gender-female') 
-            : parseFloat(e.target.value);
-            
+            : parseFloat(e.target.value) || 0;
         setFormData(prev => ({ ...prev, [e.target.name]: val }));
     };
 
@@ -100,154 +117,128 @@ export const OrderPage = () => {
                 data: { ...formData, gender: formData.gender } 
             }))
             .unwrap()
-            .then(() => alert("Основные данные сохранены!"))
-            .catch(() => alert("Ошибка при сохранении"));
+            .then(() => alert("Данные сохранены"))
+            .catch(() => alert("Ошибка сохранения"));
         }
     };
 
     const handleSaveOneDescription = (factorId: number) => {
-        if(currentOrder.id && descriptions[factorId] !== undefined) {
-            dispatch(updateFactorDescription({
-                orderId: currentOrder.id,
-                factorId,
-                desc: descriptions[factorId]
+        if(currentOrder.id) {
+            dispatch(updateFactorDescription({ 
+                orderId: currentOrder.id, 
+                factorId, 
+                desc: descriptions[factorId] || '' 
             }))
             .unwrap()
             .then(() => alert("Примечание сохранено"))
-            .catch(() => alert("Ошибка сохранения примечания"));
+            .catch(() => alert("Ошибка"));
         }
     };
 
     const handleApprove = () => {
-        if (currentOrder.id && window.confirm("Принять заявку? Результаты будут сохранены.")) {
-            dispatch(resolveOrder({ id: currentOrder.id, action: 'complete' }));
-        }
+        if (currentOrder.id && window.confirm("Принять заявку?")) dispatch(resolveOrder({ id: currentOrder.id, action: 'complete' }));
     };
-
     const handleReject = () => {
-        if (currentOrder.id && window.confirm("Отклонить заявку?")) {
-            dispatch(resolveOrder({ id: currentOrder.id, action: 'reject' }));
-        }
+        if (currentOrder.id && window.confirm("Отклонить заявку?")) dispatch(resolveOrder({ id: currentOrder.id, action: 'reject' }));
     };
 
     return (
         <Container className="pt-5 mt-5 pb-5">
-            {/* Карточка заголовка */}
-            <Card className="border-0 shadow-sm mb-4">
-                <Card.Body className="text-center py-2 d-flex justify-content-between align-items-center px-4">
-                    <h4 className="fw-bold m-0">Заявка #{currentOrder.id}</h4>
-                    <div>
-                        {isDraft && <span className="badge bg-secondary">Черновик</span>}
-                        {isFormed && <span className="badge bg-primary">В обработке</span>}
-                        {isCompleted && <span className="badge bg-success">Завершена</span>}
-                        {isRejected && <span className="badge bg-danger">Отклонена</span>}
+            {/* ШАПКА */}
+            <Card className="border-0 shadow-sm mb-4 rounded-4 bg-white">
+                <Card.Body className="py-3 px-4 d-flex justify-content-between align-items-center">
+                    <h4 className="fw-bold m-0 text-secondary">Заявка <span className="text-dark">#{currentOrder.id}</span></h4>
+                    <div className="d-flex align-items-center gap-2">
+                        {isWaitingForAsyncResult && <Badge bg="warning" text="dark" className="px-3 py-2">Вычисление...</Badge>}
+                        {!isWaitingForAsyncResult && isCompleted && <Badge bg="success" className="px-3 py-2">Завершена</Badge>}
+                        {isFormed && <Badge bg="primary" className="px-3 py-2">В обработке</Badge>}
+                        {isRejected && <Badge bg="danger" className="px-3 py-2">Отклонена</Badge>}
+                        {isDraft && <Badge bg="secondary" className="px-3 py-2">Черновик</Badge>}
                     </div>
                 </Card.Body>
             </Card>
 
             <Row className="mb-4 g-4">
-                {/* Левая колонка: Ввод данных */}
+                {/* ЛЕВАЯ КОЛОНКА: АНКЕТА */}
                 <Col md={6}>
-                    <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#f8f9fa' }}>
-                        <Card.Body>
-                            <h5 className="fw-bold mb-3">Анкета пациента</h5>
+                    <Card className="h-100 border-0 shadow-sm rounded-4" style={{ backgroundColor: '#fff' }}>
+                        <Card.Header className="bg-transparent border-0 pt-4 px-4 pb-0">
+                            <h5 className="fw-bold m-0">Анкета пациента</h5>
+                        </Card.Header>
+                        <Card.Body className="px-4">
                             <Form>
-                                <Form.Group as={Row} className="mb-2 align-items-center">
-                                    <Form.Label column sm={4}>Возраст</Form.Label>
+                                <Form.Group as={Row} className="mb-3 align-items-center">
+                                    <Form.Label column sm={4} className="text-muted fw-medium">Возраст</Form.Label>
+                                    <Col sm={8}><Form.Control type="number" name="age" value={formData.age} onChange={handleInputChange} disabled={!isDraft} className="bg-light border-0" /></Col>
+                                </Form.Group>
+                                <Form.Group as={Row} className="mb-3 align-items-center">
+                                    <Form.Label column sm={4} className="text-muted fw-medium">Пол</Form.Label>
                                     <Col sm={8}>
-                                        <Form.Control 
-                                            type="number" 
-                                            name="age" 
-                                            value={formData.age} 
-                                            onChange={handleInputChange} 
-                                            disabled={!isDraft} 
-                                        />
+                                        <div className="d-flex gap-3">
+                                            <Form.Check inline type="radio" label="Мужской" name="gender" id="gender-male" checked={!formData.gender} onChange={() => setFormData(p => ({...p, gender: false}))} disabled={!isDraft} />
+                                            <Form.Check inline type="radio" label="Женский" name="gender" id="gender-female" checked={formData.gender} onChange={() => setFormData(p => ({...p, gender: true}))} disabled={!isDraft} />
+                                        </div>
                                     </Col>
                                 </Form.Group>
-                                <Form.Group as={Row} className="mb-2 align-items-center">
-                                    <Form.Label column sm={4}>Пол</Form.Label>
-                                    <Col sm={8}>
-                                        <Form.Check 
-                                            inline type="radio" label="Мужской" name="gender" id="gender-male" 
-                                            checked={!formData.gender} 
-                                            onChange={() => setFormData(p => ({...p, gender: false}))} 
-                                            disabled={!isDraft} 
-                                        />
-                                        <Form.Check 
-                                            inline type="radio" label="Женский" name="gender" id="gender-female" 
-                                            checked={formData.gender} 
-                                            onChange={() => setFormData(p => ({...p, gender: true}))} 
-                                            disabled={!isDraft} 
-                                        />
-                                    </Col>
+                                <Form.Group as={Row} className="mb-3 align-items-center">
+                                    <Form.Label column sm={4} className="text-muted fw-medium">Вес (кг)</Form.Label>
+                                    <Col sm={8}><Form.Control type="number" name="weight" value={formData.weight} onChange={handleInputChange} disabled={!isDraft} className="bg-light border-0" /></Col>
                                 </Form.Group>
-                                <Form.Group as={Row} className="mb-2 align-items-center">
-                                    <Form.Label column sm={4}>Вес (кг)</Form.Label>
-                                    <Col sm={8}>
-                                        <Form.Control 
-                                            type="number" 
-                                            name="weight" 
-                                            value={formData.weight} 
-                                            onChange={handleInputChange} 
-                                            disabled={!isDraft} 
-                                        />
-                                    </Col>
-                                </Form.Group>
-                                <Form.Group as={Row} className="mb-2 align-items-center">
-                                    <Form.Label column sm={4}>Рост (см)</Form.Label>
-                                    <Col sm={8}>
-                                        <Form.Control 
-                                            type="number" 
-                                            name="height" 
-                                            value={formData.height} 
-                                            onChange={handleInputChange} 
-                                            disabled={!isDraft} 
-                                        />
-                                    </Col>
+                                <Form.Group as={Row} className="mb-3 align-items-center">
+                                    <Form.Label column sm={4} className="text-muted fw-medium">Рост (см)</Form.Label>
+                                    <Col sm={8}><Form.Control type="number" name="height" value={formData.height} onChange={handleInputChange} disabled={!isDraft} className="bg-light border-0" /></Col>
                                 </Form.Group>
                             </Form>
                         </Card.Body>
                     </Card>
                 </Col>
 
-                 {/* Правая колонка: Результат */}
+                {/* ПРАВАЯ КОЛОНКА: РЕЗУЛЬТАТЫ */}
                 <Col md={6}>
-                    <Card className="h-100 border-0 shadow-sm" style={{ backgroundColor: '#f8f9fa' }}>
-                        <Card.Body>
-                            <h5 className="fw-bold mb-3">Результат расчета</h5>
+                    <Card className="h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative" style={{ backgroundColor: '#f8f9fa' }}>
+                        
+                        {isWaitingForAsyncResult && (
+                            <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-white" style={{zIndex: 10}}>
+                                <div className="spinner-grow text-primary mb-3" role="status" style={{width: '3rem', height: '3rem'}}></div>
+                                <h5 className="fw-bold text-primary animate-pulse">Анализ рисков...</h5>
+                                <p className="text-muted small">Ожидание ответа от нейросети</p>
+                            </div>
+                        )}
+
+                        <Card.Body className="d-flex flex-column justify-content-center p-4">
+                            <h5 className="fw-bold mb-4">Результат расчета</h5>
                             
-                            {/* Показываем результаты если заявка завершена ИЛИ если Модератор смотрит на сформированную */}
-                            { (isCompleted || (isFormed && isModerator)) && (currentOrder.POF || 0) > 0 ? (
-                                <div>
-                                    <div className="mb-3">
-                                        <strong>Остеопоротические переломы</strong>
-                                        <div className="fs-4 text-success">{currentOrder.POF?.toFixed(1)}%</div>
+                            {/* Результаты */}
+                            {!isWaitingForAsyncResult && isCompleted && (currentOrder.POF || 0) > 0 && (
+                                <div className="text-center py-3">
+                                    <div className="mb-4 p-3 bg-white rounded-3 shadow-sm border-start border-5 border-success">
+                                        <div className="text-muted small text-uppercase mb-1">Остеопоротические переломы</div>
+                                        <div className="display-4 fw-bold text-success">{currentOrder.POF?.toFixed(1)}%</div>
                                     </div>
-                                    <div>
-                                        <strong>Перелом шейки бедра</strong>
-                                        <div className="fs-4 text-success">{currentOrder.PHF?.toFixed(1)}%</div>
+                                    <div className="p-3 bg-white rounded-3 shadow-sm border-start border-5 border-success">
+                                        <div className="text-muted small text-uppercase mb-1">Перелом шейки бедра</div>
+                                        <div className="display-4 fw-bold text-success">{currentOrder.PHF?.toFixed(1)}%</div>
                                     </div>
-                                    {isFormed && <div className="text-muted small mt-2 fst-italic">*Предварительный расчет асинхронного сервиса</div>}
                                 </div>
-                            ) : null }
+                            )}
 
                             {isRejected && (
-                                <div className="text-center py-4">
-                                    <ExclamationCircle size={48} className="text-danger mb-3" />
-                                    <h5 className="text-danger fw-bold">Заявка отклонена</h5>
+                                <div className="text-center text-danger py-4">
+                                    <XCircleFill size={64} className="mb-3 op-50"/>
+                                    <h4>Заявка отклонена</h4>
                                 </div>
                             )}
 
                             {isFormed && !isModerator && (
-                                <div className="text-center py-4 text-muted">
-                                    <Spinner animation="border" size="sm" className="me-2"/>
-                                    Ожидание проверки модератором...
+                                <div className="text-center py-5 text-muted">
+                                    <HourglassSplit size={48} className="mb-3"/>
+                                    <h5>На проверке у модератора</h5>
                                 </div>
                             )}
 
                             {isDraft && (
-                                <div className="text-center py-4 text-muted">
-                                    Заполните анкету и нажмите "Сформировать"
+                                <div className="text-center py-5 text-muted">
+                                    Заполните данные и отправьте заявку
                                 </div>
                             )}
                         </Card.Body>
@@ -255,49 +246,28 @@ export const OrderPage = () => {
                 </Col>
             </Row>
 
-            {/* Список факторов */}
+            {/* СПИСОК ФАКТОРОВ */}
             <div className="d-flex flex-column gap-3 mb-5">
                 {currentOrder.factors?.map((f) => (
-                    <Card key={f.factor_id} className="border-0 shadow-sm">
+                    <Card key={f.factor_id} className="border-0 shadow-sm rounded-3">
                         <Card.Body className="p-0">
                             <Row className="g-0">
-                                <Col md={4} className="d-flex align-items-center p-3 border-end">
-                                    <div className="me-3" style={{ width: 60 }}>
-                                        <Image src={f.image || DefaultImage} fluid rounded />
+                                <Col md={4} className="d-flex align-items-center p-3">
+                                    <div className="me-3"><Image src={f.image || DefaultImage} fluid rounded style={{width: 60, height: 60, objectFit: 'cover'}} /></div>
+                                    <div>
+                                        <h6 className="fw-bold mb-1">{f.title}</h6>
+                                        <Link to={`/factors/${f.factor_id}`} className="small text-danger text-decoration-none">Подробнее</Link>
                                     </div>
-                                    <div className="flex-grow-1">
-                                        <h6 className="fw-bold mb-2">{f.title}</h6>
-                                        <Link to={`/factors/${f.factor_id}`}>
-                                            <Button size="sm" variant="danger">Подробнее</Button>
-                                        </Link>
-                                    </div>
-                                    {isDraft && (
-                                        <Button 
-                                            variant="link" className="text-muted p-0 ms-2"
-                                            onClick={() => dispatch(removeFactorFromOrder({ orderId: currentOrder.id!, factorId: f.factor_id! }))}
-                                        >
-                                            <Trash size={20} />
-                                        </Button>
-                                    )}
+                                    {isDraft && <Button variant="link" className="text-muted ms-auto" onClick={() => dispatch(removeFactorFromOrder({ orderId: currentOrder.id!, factorId: f.factor_id! }))}><Trash/></Button>}
                                 </Col>
-
-                                <Col md={8} className="p-3 bg-light d-flex flex-column">
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={2}
-                                        value={descriptions[f.factor_id!] || ''}
-                                        onChange={(e) => setDescriptions(prev => ({ ...prev, [f.factor_id!]: e.target.value }))}
-                                        disabled={!isDraft}
-                                        className="border-0 bg-white mb-2"
-                                        style={{ resize: 'none' }}
-                                        placeholder="Дополнительная информация..."
-                                    />
-                                    {isDraft && (
-                                         <div className="text-end">
-                                            <Button size="sm" variant="outline-success" onClick={() => handleSaveOneDescription(f.factor_id!)}>
-                                                <Floppy size={14}/> Сохранить
-                                            </Button>
+                                <Col md={8} className="p-3 bg-light d-flex flex-column justify-content-center">
+                                    {isDraft ? (
+                                        <div className="d-flex gap-2">
+                                            <Form.Control size="sm" value={descriptions[f.factor_id!] || ''} onChange={(e) => setDescriptions(prev => ({ ...prev, [f.factor_id!]: e.target.value }))} placeholder="Примечание..." className="border-0" />
+                                            <Button size="sm" variant="light" onClick={() => handleSaveOneDescription(f.factor_id!)}><Floppy/></Button>
                                         </div>
+                                    ) : (
+                                        <p className="mb-0 small text-muted fst-italic">{f.description || "Нет примечаний"}</p>
                                     )}
                                 </Col>
                             </Row>
@@ -306,40 +276,30 @@ export const OrderPage = () => {
                 ))}
             </div>
 
-            {/* --- КНОПКИ ДЕЙСТВИЙ --- */}
-            
-            {/* Для пользователя (Черновик) */}
+            {/* КНОПКИ ДЛЯ ЮЗЕРА */}
             {isDraft && (
-                <Row>
-                    <Col className="d-flex gap-2">
-                        <Button variant="outline-success" onClick={handleSaveMain}>
-                            <Floppy className="me-2"/> Сохранить
-                        </Button>
-                        <Button variant="outline-danger" onClick={() => { if(window.confirm('Удалить?')) dispatch(deleteOrder(currentOrder.id!)); }}>
-                            Удалить
-                        </Button>
-                    </Col>
-                    <Col className="text-end">
-                         <Button variant="success" size="lg" onClick={() => dispatch(submitOrder(currentOrder.id!))}>
-                            Сформировать <CheckCircleFill className="ms-2"/>
-                        </Button>
-                    </Col>
-                </Row>
+                <div className="d-flex justify-content-between align-items-center bg-white p-4 rounded-4 shadow-sm sticky-bottom border-top">
+                    <div>
+                        <Button variant="outline-danger" className="me-2" onClick={() => { if(window.confirm('Удалить?')) dispatch(deleteOrder(currentOrder.id!)); }}>Удалить</Button>
+                        <Button variant="outline-dark" onClick={handleSaveMain}>Сохранить черновик</Button>
+                    </div>
+                    <Button variant="success" size="lg" className="px-5 shadow" onClick={() => dispatch(submitOrder(currentOrder.id!))}>
+                        Сформировать <CheckCircleFill className="ms-2"/>
+                    </Button>
+                </div>
             )}
 
-            {/* Для Модератора (В работе) */}
+            {/* КНОПКИ ДЛЯ МОДЕРАТОРА */}
             {isModerator && isFormed && (
-                <Card className="mt-4 border-danger shadow">
-                    <Card.Header className="bg-danger text-white fw-bold">Действия модератора</Card.Header>
-                    <Card.Body className="d-flex justify-content-end gap-3">
-                        <Button variant="outline-danger" size="lg" onClick={handleReject}>
-                            <XCircleFill className="me-2" /> Отклонить
-                        </Button>
-                        <Button variant="success" size="lg" onClick={handleApprove}>
-                            <CheckLg className="me-2" /> Принять (Подтвердить)
-                        </Button>
-                    </Card.Body>
-                </Card>
+                <div className="fixed-bottom p-4 bg-white border-top shadow-lg">
+                    <Container className="d-flex justify-content-between align-items-center">
+                        <h5 className="m-0 fw-bold text-dark">Панель модератора</h5>
+                        <div className="d-flex gap-3">
+                            <Button variant="outline-danger" size="lg" onClick={handleReject} className="px-4">Отклонить</Button>
+                            <Button variant="success" size="lg" onClick={handleApprove} className="px-5">Принять и рассчитать</Button>
+                        </div>
+                    </Container>
+                </div>
             )}
         </Container>
     );
