@@ -3,7 +3,7 @@
 
 В данном репозиторие представлен фронтенд для системы FRAX.
 
-Актуальная ветка - Full-interface
+Актуальная ветка - Tauri
 
 Навигация по проекту:
 * Фронтенд - https://github.com/Captain-0bvi0us/RIP_Frontend_Web_Service.git
