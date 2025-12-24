@@ -102,10 +102,10 @@ export const AdminFactorsPage = () => {
                     <Button variant="outline-secondary" onClick={() => navigate('/factors')}>
                         <ArrowLeft /> Назад
                     </Button>
-                    <h2 className="fw-bold m-0 text-secondary">Управление услугами</h2>
+                    <h2 className="fw-bold m-0 text-secondary">Управление факторами</h2>
                 </div>
                 <Button variant="success" onClick={() => handleOpenModal()}>
-                    <PlusLg className="me-2" /> Добавить услугу
+                    <PlusLg className="me-2" /> Добавить фактор
                 </Button>
             </div>
 

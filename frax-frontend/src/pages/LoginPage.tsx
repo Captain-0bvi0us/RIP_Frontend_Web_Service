@@ -4,8 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../store/slices/userSlice';
 import type { AppDispatch, RootState } from '../store';
-import { BoxArrowInRight } from 'react-bootstrap-icons';
-import './styles/main.css';
+import { BoxArrowInRight, ExclamationTriangleFill } from 'react-bootstrap-icons';
+import './styles/LoginPage.css';
 
 export const LoginPage = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
@@ -14,20 +14,16 @@ export const LoginPage = () => {
     const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.user);
 
     useEffect(() => {
+        dispatch(clearError());
         if (isAuthenticated) {
             navigate('/factors');
         }
-        dispatch(clearError());
     }, [isAuthenticated, navigate, dispatch]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            await dispatch(loginUser(formData)).unwrap();
-            navigate('/factors');
-        } catch (err) {
-            console.error(err);
-        }
+        dispatch(clearError()); 
+        dispatch(loginUser(formData));
     };
 
     return (
@@ -39,9 +35,12 @@ export const LoginPage = () => {
                             <h2 className="fw-bold" style={{ color: '#495057' }}>Вход</h2>
                             <p className="text-muted">Добро пожаловать в FRAX Calculator</p>
                         </div>
-
-                        {error && <Alert variant="danger" className="text-center">{error}</Alert>}
-
+                        {error && (
+                            <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm animate-fade-in">
+                                <ExclamationTriangleFill className="me-3 flex-shrink-0" size={24} />
+                                <div>{error}</div>
+                            </Alert>
+                        )}
                         <Form onSubmit={handleSubmit}>
                             <Form.Floating className="mb-3">
                                 <Form.Control
@@ -51,6 +50,7 @@ export const LoginPage = () => {
                                     value={formData.username}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                     required
+                                    isInvalid={!!error && error.toLowerCase().includes('пользователь')}
                                 />
                                 <label htmlFor="username" style={{ color: '#495057' }}>Логин</label>
                             </Form.Floating>
@@ -63,6 +63,7 @@ export const LoginPage = () => {
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     required
+                                    isInvalid={!!error && error.toLowerCase().includes('пароль')}
                                 />
                                 <label htmlFor="password" style={{ color: '#495057' }}>Пароль</label>
                             </Form.Floating>
@@ -73,13 +74,23 @@ export const LoginPage = () => {
                                 className="w-100 py-3 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2"
                                 disabled={loading}
                             >
-                                {loading ? <Spinner size="sm" animation="border" /> : <><BoxArrowInRight size={20}/> Войти</>}
+                                {loading ? (
+                                    <>
+                                        <Spinner size="sm" animation="border" /> 
+                                        <span>Вход...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <BoxArrowInRight size={20}/> 
+                                        <span>Войти</span>
+                                    </>
+                                )}
                             </Button>
                         </Form>
 
                         <div className="text-center mt-4">
                             <span className="text-muted">Нет аккаунта? </span>
-                            <Link to="/register" className="text-danger fw-bold text-decoration-none">
+                            <Link to="/register" className="text-danger fw-bold text-decoration-none hover-underline">
                                 Зарегистрироваться
                             </Link>
                         </div>
